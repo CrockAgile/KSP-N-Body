@@ -10,13 +10,9 @@ scene.fullscreen = False
 
 
 G = 6.0673e-41
-BH_theta = 0.5
-Soft = 1.0
 bodies = []
 meter_scale = 1.03227e10
 dt = 1e4
-scale = 0.2
-total_energy = 0.0
 
 class Quad:
 	def __init__(self, x, y, size):
@@ -66,10 +62,6 @@ class Body:
 		self.r = self.r + dt * self.v
 		self.visual.pos = self.r
 
-	def radius(self):
-		return pow(self.mass, 1./10) * scale
-
-
 class BarnesHutNode:
 	def __init__(self, quad):
 		self.quad = quad
@@ -118,11 +110,15 @@ def init():
 	Eve = Body(vector(9.931e9,0.0,0.0),vector(0.0,10811.0,0.0),1.2233e23,7e5, (0.5,0.0,1.0))
 	Kerbin = Body(vector(1.3599e10,0.0,0.0),vector(0.0,9284.5,0.0),5.292e22,6.00e5, color.blue)
 	Duna = Body(vector(2.17832e10,0.0,0.0),vector(0.0,7147.0,0.0),4.5154e21,3.20e5, (0.4,0.0,0.0))
+	Dres = Body(vector(4.67610e10,0.0,0.0),vector(0.0,4630.0,0.0),3.2191e20,1.38e5, color.gray(0.7))
+	Jool = Body(vector(7.22122e10,0.0,0.0),vector(0.0,3927.0,0.0),4.2333e24,6.0e6, color.green)
 	bodies.append(Kerbol)
 	bodies.append(Moho)
 	bodies.append(Eve)
 	bodies.append(Kerbin)
 	bodies.append(Duna)
+	bodies.append(Dres)
+	bodies.append(Jool)
 	scene.center = Kerbol.visual.pos
 
 def newton_grav(body, ext):
