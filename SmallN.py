@@ -1,4 +1,3 @@
-from scipy import *
 from math import *
 from visual import *
 
@@ -13,6 +12,7 @@ bodies = []
 meter_scale = 1.03227e10
 dt = 3.15569e3
 kerbal_year = 9.2077e6
+kerbol_rad = 2.616e8
 radius_scale = 10.0
 
 class Quad:
@@ -62,7 +62,7 @@ class Body:
 		self.v = self.v + dt * self.a
 		self.r = self.r + dt * self.v
 		self.visual.pos = self.r
-		self.visual.trail.append(pos=self.r, retain=500)
+		self.visual.trail.append(pos=self.r, retain=400)
 		self.a = vector(0,0,0)
 
 class BarnesHutNode:
@@ -87,6 +87,7 @@ class BarnesHutNode:
 			self.body = None
 
 def main():
+	cycles = 0
 	time_elapsed = 0
 	init()
 	for i in bodies: # starts the 'leap frog' method
@@ -95,16 +96,20 @@ def main():
 
 	#while(time_elapsed < kerbal_year):
 	while(True):
-		rate(1000)
+		rate(500)
 		for i in bodies:
 			for j in bodies:
 				if j != i:
 					if mag(i.r - j.r) <(i.radius + j.radius):
-						print "collision!"
+						print "collision! all bets are off"
 					else:
 						i.a = i.a + newton_grav(i,j)/i.mass
 			i.update(dt)
 		time_elapsed = time_elapsed + dt
+		cycles = cycles + 1
+		if cycles % 2918 == 0:
+			cycles = 0
+			print time_elapsed/kerbal_year, ' ', sum_momentum(bodies)
 		scene.center = bodies[0].visual.pos
 
 
@@ -132,5 +137,11 @@ def newton_grav(body, ext):
 	r_mag = mag(r)
 	r_norm = norm(r)
 	return (-G*ext.mass*body.mass/(r_mag**2)) * r_norm
+
+def sum_momentum(bodies):
+	sum = 0
+	for i in bodies:
+		sum = sum + i.mass * mag(i.v) * mag(i.r-bodies[0].r) * sin(diff_angle(i.r,i.v))
+	return sum
 
 main()
