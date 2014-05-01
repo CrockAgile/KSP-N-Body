@@ -8,11 +8,12 @@ scene.title = 'KSP Small-N'
 scene.autoscale = False
 scene.fullscreen = False
 
-
 G = 6.0673e-41
 bodies = []
 meter_scale = 1.03227e10
-dt = 1e4
+dt = 3.15569e3
+kerbal_year = 9.2077e6
+radius_scale = 10.0
 
 class Quad:
 	def __init__(self, x, y, size):
@@ -49,10 +50,10 @@ class Body:
 		self.v = v / meter_scale
 		self.a = vector(0,0,0)
 		self.mass = mass 
-		self.radius = 10*radius / meter_scale
+		self.radius = radius_scale*radius / meter_scale
 		self.color = color
 		self.visual = sphere(pos = r, radius = self.radius, color = self.color)
-		self.visual.trail = curve(color = self.color, retain=50)
+		self.visual.trail = curve(color = self.color)
 
 	def __repr__(self):
 		return 'Body(r=%s,v=%s,mass=%s)' % (self.r, self.v, self.mass)
@@ -61,6 +62,8 @@ class Body:
 		self.v = self.v + dt * self.a
 		self.r = self.r + dt * self.v
 		self.visual.pos = self.r
+		self.visual.trail.append(pos=self.r, retain=500)
+		self.a = vector(0,0,0)
 
 class BarnesHutNode:
 	def __init__(self, quad):
@@ -84,13 +87,15 @@ class BarnesHutNode:
 			self.body = None
 
 def main():
+	time_elapsed = 0
 	init()
 	for i in bodies: # starts the 'leap frog' method
 		i.v = i.v + i.a * dt/2.0
 		i.r = i.r + i.v * dt
 
+	#while(time_elapsed < kerbal_year):
 	while(True):
-		rate(100)
+		rate(1000)
 		for i in bodies:
 			for j in bodies:
 				if j != i:
@@ -99,8 +104,7 @@ def main():
 					else:
 						i.a = i.a + newton_grav(i,j)/i.mass
 			i.update(dt)
-			i.visual.trail.append(pos=i.r)
-			i.a = vector(0,0,0)
+		time_elapsed = time_elapsed + dt
 		scene.center = bodies[0].visual.pos
 
 
@@ -112,6 +116,7 @@ def init():
 	Duna = Body(vector(2.17832e10,0.0,0.0),vector(0.0,7147.0,0.0),4.5154e21,3.20e5, (0.4,0.0,0.0))
 	Dres = Body(vector(4.67610e10,0.0,0.0),vector(0.0,4630.0,0.0),3.2191e20,1.38e5, color.gray(0.7))
 	Jool = Body(vector(7.22122e10,0.0,0.0),vector(0.0,3927.0,0.0),4.2333e24,6.0e6, color.green)
+	Eeloo = Body(vector(1.13549e11,0.0,0.0),vector(0.0,2764.0,0.0),1.1149358e21,2.1e5, color.white)
 	bodies.append(Kerbol)
 	bodies.append(Moho)
 	bodies.append(Eve)
@@ -119,6 +124,7 @@ def init():
 	bodies.append(Duna)
 	bodies.append(Dres)
 	bodies.append(Jool)
+	bodies.append(Eeloo)
 	scene.center = Kerbol.visual.pos
 
 def newton_grav(body, ext):
