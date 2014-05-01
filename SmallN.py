@@ -87,9 +87,9 @@ class BarnesHutNode:
 			self.body = None
 
 def main():
-	cycles = 0
+	cycles = 1
 	time_elapsed = 0
-	init()
+	init_angl_mom = init()
 	for i in bodies: # starts the 'leap frog' method
 		i.v = i.v + i.a * dt/2.0
 		i.r = i.r + i.v * dt
@@ -106,10 +106,9 @@ def main():
 						i.a = i.a + newton_grav(i,j)/i.mass
 			i.update(dt)
 		time_elapsed = time_elapsed + dt
-		cycles = cycles + 1
-		if cycles % 2918 == 0:
-			cycles = 0
-			print time_elapsed/kerbal_year, ' ', sum_momentum(bodies)
+		if time_elapsed > kerbal_year * cycles:
+			cycles = cycles + 1
+			print time_elapsed/kerbal_year, ' ', sum_momentum(bodies), sum_momentum(bodies)/init_angl_mom - 1
 		scene.center = bodies[0].visual.pos
 
 
@@ -131,6 +130,7 @@ def init():
 	bodies.append(Jool)
 	bodies.append(Eeloo)
 	scene.center = Kerbol.visual.pos
+	return sum_momentum(bodies)
 
 def newton_grav(body, ext):
 	r = body.r - ext.r
@@ -141,7 +141,7 @@ def newton_grav(body, ext):
 def sum_momentum(bodies):
 	sum = 0
 	for i in bodies:
-		sum = sum + i.mass * mag(i.v) * mag(i.r-bodies[0].r) * sin(diff_angle(i.r,i.v))
+		sum = sum + i.mass * mag(i.v) * mag(i.r) * sin(diff_angle(i.r,i.v))
 	return sum
 
 main()
