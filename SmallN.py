@@ -3,26 +3,9 @@ from visual import *
 import argparse
 import csv
 import string
-
-parser = argparse.ArgumentParser()
-parser.add_argument("--nonvisual", help="if no graphics desires")
-args = parser.parse_args()
-if args.nonvisual:
-    vis_mode = False
-else:
-    vis_mode = True
-
-if vis_mode:
-    scene.width = 800
-    scene.height = 800
-    scene.title = 'KSP Small-N'
-    scene.autoscale = False
-    scene.fullscreen = False
-else:
-    scene.visible = False
+import time
 
 G = 6.0673e-41
-bodies = []
 meter_scale = 1.03227e10
 dt = 3.15569e3
 kerbal_year = 9.2077e6
@@ -60,17 +43,17 @@ class Quad:
 
 class Body:
     def __init__(self, r, v, mass, radius, color):
-        self.r = r / meter_scale
-        self.v = v / meter_scale
+        self.r = r
+        self.v = v
         self.a = vector(0,0,0)
         self.mass = mass 
-        self.radius = radius_scale*radius / meter_scale
+        self.radius = radius
         self.color = color
         self.visual = sphere(pos = r, radius = self.radius, color = self.color)
         self.visual.trail = curve(color = self.color)
 
     def __repr__(self):
-        return '%s,%s,%s,%s,%s)' % (self.r, self.v, self.mass, self.radius, self.color)
+        return '%s,%s,%s,%s,%s' % (self.r, self.v, self.mass, self.radius, self.color)
 
     def update(self, dt):
         self.v = self.v + dt * self.a
@@ -101,20 +84,15 @@ class BarnesHutNode:
         elif (not self.external(self)):
             self.body = None
 
-def main():
-    cycles = 1
-    time_elapsed = 0
-    init_angl_mom = init()
-    for i in bodies: # starts the 'leap frog' method
-        i.v = i.v + i.a * dt/2.0
-        i.r = i.r + i.v * dt
+def main(loadfile):
+    if not loadfile:
+        loadfile = 'start.csv'
+    time_elapsed, bodies, init_angl_mom = init(loadfile)
     save(time_elapsed,bodies)
-    load('start.csv')
 
+    cycles = 1
     while(True):
-        if vis_mode:
-            rate(500)
-            scene.center = bodies[0].visual.pos
+        rate(500)
         if scene.kb.keys:
             if scene.kb.getkey() == 'q':
                 print "saving!"
@@ -131,10 +109,10 @@ def main():
         if time_elapsed > kerbal_year * cycles:
             cycles = cycles + 1
             print time_elapsed/kerbal_year, ' ', sum_momentum(bodies)/init_angl_mom - 1
-            
+        scene.center = bodies[0].visual.pos    
 
-#Hard Coded Init, Outdated, Now Starts from start.csv 
-def init():
+'''Hard Coded Init, Outdated, Now Starts from start.csv
+def init_old(bodies):
     Kerbol = Body(vector(0.0,0.0,0.0),vector(0.0,0.0,0.0),1.756e28,2.616e8, color.red)
     Moho = Body(vector(6.31576e9,0.0,0.0),vector(0.0,12186.0,0.0),2.526e21,2.5e5, color.gray(0.5))
     Eve = Body(vector(9.931e9,0.0,0.0),vector(0.0,10811.0,0.0),1.2233e23,7e5, (0.5,0.0,1.0))
@@ -154,12 +132,11 @@ def init():
     if vis_mode:
         scene.center = Kerbol.visual.pos
     return sum_momentum(bodies)
+'''
 
-
-#def init():
-#    time, saved_bodies = load('start.csv')
-#    bodies = saved_bodies
-#    return sum_momentum(bodies)
+def init(save_file):
+    time, saved_bodies = load(save_file)
+    return time, saved_bodies, sum_momentum(saved_bodies)
 
 def newton_grav(body, ext):
     r = body.r - ext.r
@@ -174,21 +151,45 @@ def sum_momentum(bodies):
     return sum
 
 def save(time,bodies):
-    with open('state.csv', 'w') as fp:
+    with open('save.csv', 'w') as fp:
         a = csv.writer(fp, delimiter=',')
         a.writerow([time])
         a.writerow(bodies)
 
 def load(file):
     data = []
-    with open('state.csv', 'r') as fp:
+    ret_bods = []
+    with open(file, 'r') as fp:
         a = csv.reader(fp, delimiter=',')
         for row in a:
             data.append(row)
-    time = data[0][0]
+    time = float(data[0][0])
     identity = string.maketrans("","")
     load_bods = [s.translate(identity, "<>()") for s in data[1]]
-    for body in load_bods:
-        pass
+    for b in load_bods:
+        b = b.split(',')
+        b = [s.translate(identity, " ") for s in b]
+        b = map(float,b)
+        ret_bods.append(Body(vector(b[0],b[1],b[2]),vector(b[3],b[4],b[5]),b[6],b[7],(b[8],b[9],b[10])))
+    return time, ret_bods
 
-main()
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-v','--visual', action='store_true', required=False)
+    parser.add_argument('-l','--load', dest='load', required=False)
+    args = parser.parse_args()
+    if args.visual:
+        vis_mode = True
+    else:
+        vis_mode = False
+
+    if vis_mode:
+        scene.width = 800
+        scene.height = 800
+        scene.title = 'KSP Small-N'
+        scene.autoscale = False
+        scene.fullscreen = False
+    else:
+        scene.visible = False
+
+    main(args.load)
