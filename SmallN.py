@@ -109,6 +109,7 @@ def main():
 		cycles = cycles + 1
 		if cycles % 2918 == 0:
 			cycles = 0
+			print bodies[0].r
 			print time_elapsed/kerbal_year, ' ', sum_momentum(bodies)
 		scene.center = bodies[0].visual.pos
 
