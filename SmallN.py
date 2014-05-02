@@ -1,6 +1,8 @@
 from math import *
 from visual import *
 import argparse
+import csv
+import string
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--nonvisual", help="if no graphics desires")
@@ -68,7 +70,7 @@ class Body:
         self.visual.trail = curve(color = self.color)
 
     def __repr__(self):
-        return 'Body(r=%s,v=%s,mass=%s)' % (self.r, self.v, self.mass)
+        return '%s,%s,%s,%s,%s)' % (self.r, self.v, self.mass, self.radius, self.color)
 
     def update(self, dt):
         self.v = self.v + dt * self.a
@@ -106,12 +108,17 @@ def main():
     for i in bodies: # starts the 'leap frog' method
         i.v = i.v + i.a * dt/2.0
         i.r = i.r + i.v * dt
+    save(time_elapsed,bodies)
+    load('start.csv')
 
-    #while(time_elapsed < kerbal_year):
     while(True):
         if vis_mode:
             rate(500)
             scene.center = bodies[0].visual.pos
+        if scene.kb.keys:
+            if scene.kb.getkey() == 'q':
+                print "saving!"
+                save(time_elapsed,bodies)
         for i in bodies:
             for j in bodies:
                 if j != i:
@@ -126,16 +133,16 @@ def main():
             print time_elapsed/kerbal_year, ' ', sum_momentum(bodies)/init_angl_mom - 1
             
 
-
+#Hard Coded Init, Outdated, Now Starts from start.csv 
 def init():
     Kerbol = Body(vector(0.0,0.0,0.0),vector(0.0,0.0,0.0),1.756e28,2.616e8, color.red)
     Moho = Body(vector(6.31576e9,0.0,0.0),vector(0.0,12186.0,0.0),2.526e21,2.5e5, color.gray(0.5))
     Eve = Body(vector(9.931e9,0.0,0.0),vector(0.0,10811.0,0.0),1.2233e23,7e5, (0.5,0.0,1.0))
     Kerbin = Body(vector(1.3599e10,0.0,0.0),vector(0.0,9284.5,0.0),5.292e22,6.00e5, color.blue)
     Duna = Body(vector(2.17832e10,0.0,0.0),vector(0.0,7147.0,0.0),4.5154e21,3.20e5, (0.4,0.0,0.0))
-    Dres = Body(vector(4.67610e10,0.0,0.0),vector(0.0,4630.0,0.0),3.2191e20,1.38e5, color.gray(0.7))
+    Dres = Body(vector(-4.67610e10,0.0,0.0),vector(0.0,-4630.0,0.0),3.2191e20,1.38e5, color.gray(0.7))
     Jool = Body(vector(7.22122e10,0.0,0.0),vector(0.0,3927.0,0.0),4.2333e24,6.0e6, color.green)
-    Eeloo = Body(vector(1.13549e11,0.0,0.0),vector(0.0,2764.0,0.0),1.1149358e21,2.1e5, color.white)
+    Eeloo = Body(vector(-1.13549e11,0.0,0.0),vector(0.0,-2764.0,0.0),1.1149358e21,2.1e5, color.white)
     bodies.append(Kerbol)
     bodies.append(Moho)
     bodies.append(Eve)
@@ -148,6 +155,14 @@ def init():
         scene.center = Kerbol.visual.pos
     return sum_momentum(bodies)
 
+
+#def init():
+#    time, saved_bodies = load('start.csv')
+#    bodies = saved_bodies
+#    return sum_momentum(bodies)
+
+
+
 def newton_grav(body, ext):
     r = body.r - ext.r
     r_mag = mag(r)
@@ -159,5 +174,23 @@ def sum_momentum(bodies):
     for i in bodies:
         sum = sum + i.mass * mag(i.v) * mag(i.r) * sin(diff_angle(i.r,i.v))
     return sum
+
+def save(time,bodies):
+    with open('state.csv', 'w') as fp:
+        a = csv.writer(fp, delimiter=',')
+        a.writerow([time])
+        a.writerow(bodies)
+
+def load(file):
+    data = []
+    with open('state.csv', 'r') as fp:
+        a = csv.reader(fp, delimiter=',')
+        for row in a:
+            data.append(row)
+    time = data[0][0]
+    identity = string.maketrans("","")
+    load_bods = [s.translate(identity, "<>()") for s in data[1]]
+    for body in load_bods:
+        pass
 
 main()
